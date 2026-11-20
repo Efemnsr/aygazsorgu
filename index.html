@@ -778,7 +778,7 @@
     function highlightText(text, rawQuery) {
       const safe = escapeHtml(text);
       if (!rawQuery) return safe;
-      const escapedQ = rawQuery.replace(/[.*+?^${}()|[\]\]/g, "\$&");
+      const escapedQ = rawQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(`(${escapedQ})`, "gi");
       return safe.replace(regex, "<mark>$1</mark>");
     }
