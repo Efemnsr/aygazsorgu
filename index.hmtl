@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aygaz Müşteri Takip Sistemi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #0a0c10;
+      --bg-elevated: #12161f;
+      --bg-card: #161b26;
+      --bg-input: #0e1118;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --primary-glow: rgba(59, 130, 246, 0.25);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.14);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.14);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top right, #131c31 0%, var(--bg-base) 45%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 20px 16px 60px;
+    }
+
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .login-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 85vh;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      background: rgba(22, 27, 38, 0.88);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+    }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-glow);
+      color: #60a5fa;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .login-card h1 {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .login-card p {
+      margin: 0 0 24px;
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 8px 20px var(--primary-glow);
+    }
+
+    .brand-title h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title span {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .stat-value.debt {
+      color: #f87171;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-input);
+      color: var(--text-main);
+      font-size: 14px;
+      transition: all 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    button {
+      padding: 11px 18px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #1f2633;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #283142;
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: var(--success-bg);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-success:hover {
+      background: var(--success);
+      color: #fff;
+    }
+
+    .btn-warning {
+      background: var(--warning-bg);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.28);
+    }
+
+    .btn-warning:hover {
+      background: var(--warning);
+      color: #0f172a;
+    }
+
+    .btn-sm {
+      padding: 7px 11px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .product-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .chip-btn {
+      background: #1d2432;
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .chip-btn:hover {
+      background: var(--primary-glow);
+      color: #93c5fd;
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
+    .search-bar-wrapper {
+      position: relative;
+      margin-bottom: 14px;
+    }
+
+    .search-bar-wrapper input {
+      padding: 14px 16px 14px 42px;
+      font-size: 15px;
+      border-radius: 12px;
+      background: #0b0e14;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .filter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-pill {
+      background: #1a202c;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .filter-pill.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .customer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+      gap: 14px;
+    }
+
+    .c-card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+      transition: all 0.2s;
+    }
+
+    .c-card:hover {
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .c-card.has-debt {
+      border-left: 3px solid var(--danger);
+    }
+
+    .c-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .c-name {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .debt-pill {
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .debt-pill.unpaid {
+      background: var(--danger-bg);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .debt-pill.paid {
+      background: var(--success-bg);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .c-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+    }
+
+    .c-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.45;
+    }
+
+    .c-row-icon {
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .c-products {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      color: #bfdbfe;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .c-note {
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.18);
+      color: #fde68a;
+      padding: 7px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+    }
+
+    .c-actions {
+      display: flex;
+      gap: 7px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    mark {
+      background: rgba(250, 204, 21, 0.3);
+      color: #fef08a;
+      padding: 0 2px;
+      border-radius: 3px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .status-msg {
+      font-size: 13px;
+      color: #fbbf24;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- GİRİŞ EKRANI -->
+    <div id="loginView" class="login-wrapper">
+      <div class="login-card">
+        <div class="brand-badge">🔥 Tüp Bayii Yönetim Paneli</div>
+        <h1>Müşteri Defteri</h1>
+        <p>Kayıtlara erişmek, borç sorgulamak ve yeni sipariş eklemek için giriş yapın.</p>
+        <form id="loginForm">
+          <div style="margin-bottom: 14px;">
+            <label class="field-label">E-posta Adresi</label>
+            <input type="email" id="loginEmail" placeholder="ornek@bayi.com" required />
+          </div>
+          <div style="margin-bottom: 20px;">
+            <label class="field-label">Şifre</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required />
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; padding: 13px;">Sisteme Giriş Yap</button>
+        </form>
+        <div id="loginError" class="status-msg"></div>
+      </div>
+    </div>
+
+    <!-- ANA PANEL -->
+    <div id="appView" class="hidden">
+      <div class="topbar">
+        <div class="brand-title">
+          <div class="brand-icon">🔥</div>
+          <div>
+            <h1>Müşteri Takip Defteri</h1>
+            <span>Firebase Canlı Veritabanı • Anlık Senkronizasyon</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" id="toggleFormBtn" class="btn-primary">+ Yeni Müşteri Ekle</button>
+          <button type="button" id="logoutBtn" class="btn-secondary">Çıkış Yap</button>
+        </div>
+      </div>
+
+      <!-- ÖZET İSTATİSTİKLER -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-label">Toplam Müşteri</span>
+          <span class="stat-value" id="statTotalCustomers">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Borçlu Müşteri Sayısı</span>
+          <span class="stat-value" id="statDebtorCount">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Toplam Alacak (Borç)</span>
+          <span class="stat-value debt" id="statTotalDebt">0 ₺</span>
+        </div>
+      </div>
+
+      <!-- MÜŞTERİ EKLEME / DÜZENLEME FORMU -->
+      <div id="formCard" class="card hidden">
+        <div class="card-header">
+          <h2 class="card-title" id="formTitle">✨ Yeni Müşteri Kaydı</h2>
+          <button type="button" id="closeFormBtn" class="btn-secondary btn-sm">Kapat ✕</button>
+        </div>
+        <form id="customerForm">
+          <input type="hidden" id="editId" />
+          <div class="form-grid">
+            <div>
+              <label class="field-label">Ad Soyad *</label>
+              <input type="text" id="adSoyad" placeholder="Örn: Mehmet Yılmaz" required />
+            </div>
+            <div>
+              <label class="field-label">Borç Tutarı (TL)</label>
+              <input type="number" id="borc" placeholder="0" min="0" step="0.01" value="0" />
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label class="field-label">Aldığı Ürünler</label>
+            <input type="text" id="urunler" placeholder="Örn: 1x 12kg Ev Tüpü, 1x Dedantör" />
+            <div class="product-chips">
+              <button type="button" class="chip-btn" data-add="1x 12kg Ev Tüpü">+ 12kg Ev Tüpü</button>
+              <button type="button" class="chip-btn" data-add="1x 2kg Piknik Tüpü">+ 2kg Piknik Tüpü</button>
+              <button type="button" class="chip-btn" data-add="1x 24kg Ticari Tüp">+ 24kg Ticari</button>
+              <button type="button" class="chip-btn" data-add="1x 45kg Sanayi Tüpü">+ 45kg Sanayi</button>
+              <button type="button" class="chip-btn" data-add="1x Dedantör + Hortum">+ Dedantör/Hortum</button>
+            </div>
+          </div>
+
+          <div style="margin-bottom: 14px;">
+            <label class="field-label">Açık Adres</label>
+            <input type="text" id="adres" placeholder="Mahalle, Cadde/Sokak, Bina No, Daire..." />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label class="field-label">Not (Telefon, zil bilgisi, ödeme sözü vb.)</label>
+            <textarea id="not" rows="2" placeholder="Örn: 0532 000 00 00 - Ay başında ödeyecek, 3. kat"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button type="submit" id="saveBtn" class="btn-primary">Müşteriyi Kaydet</button>
+            <button type="button" id="cancelEditBtn" class="btn-secondary hidden">Düzenlemeden Vazgeç</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- GELİŞMİŞ ARAMA VE FİLTRELEME -->
+      <div class="card">
+        <div class="search-bar-wrapper">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Ad soyad, adres, aldığı ürün veya not içinde anında ara..." />
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-pills">
+            <button type="button" class="filter-pill active" data-filter="all">Tümü</button>
+            <button type="button" class="filter-pill" data-filter="debt">Sadece Borçlular</button>
+            <button type="button" class="filter-pill" data-filter="clear">Borcu Olmayanlar</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 13px; color: var(--text-muted);">Sırala:</span>
+            <select id="sortSelect" style="width: auto; padding: 7px 12px; font-size: 13px;">
+              <option value="name_asc">İsim (A → Z)</option>
+              <option value="debt_desc">Borç (Yüksek → Düşük)</option>
+              <option value="debt_asc">Borç (Düşük → Yüksek)</option>
+              <option value="newest">En Son Eklenen</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- MÜŞTERİ LİSTESİ -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📋 Müşteri Kayıtları (<span id="filteredCount">0</span>)</h2>
+        </div>
+        <div id="customerList" class="customer-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // =========================================================================
+    // FIREBASE AYARLARI: Project Settings -> Your apps (</>) bölümünden aldığın
+    // bilgileri aşağıdaki "BURAYA" yazan yerlere yapıştır.
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "BURAYA",
+      authDomain: "BURAYA",
+      projectId: "BURAYA",
+      storageBucket: "BURAYA",
+      messagingSenderId: "BURAYA",
+      appId: "BURAYA"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const musterilerRef = collection(db, "musteriler");
+
+    let allCustomers = [];
+    let currentFilter = "all";
+    let unsubscribeSnapshot = null;
+
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
+    const loginError = document.getElementById("loginError");
+    const formCard = document.getElementById("formCard");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginView.classList.add("hidden");
+        appView.classList.remove("hidden");
+        startListening();
+      } else {
+        appView.classList.add("hidden");
+        loginView.classList.remove("hidden");
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+      }
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.textContent = "Giriş kontrol ediliyor...";
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          document.getElementById("loginEmail").value.trim(),
+          document.getElementById("loginPassword").value
+        );
+        loginError.textContent = "";
+      } catch (err) {
+        loginError.textContent = "Giriş başarısız: E-posta, şifre veya Firebase ayarlarını kontrol edin.";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+
+    document.getElementById("toggleFormBtn").addEventListener("click", () => {
+      resetForm();
+      formCard.classList.remove("hidden");
+      document.getElementById("adSoyad").focus();
+    });
+
+    document.getElementById("closeFormBtn").addEventListener("click", () => {
+      resetForm();
+      formCard.classList.add("hidden");
+    });
+
+    document.querySelectorAll(".chip-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const input = document.getElementById("urunler");
+        const item = btn.dataset.add;
+        const current = input.value.trim();
+        input.value = current ? `${current}, ${item}` : item;
+      });
+    });
+
+    function startListening() {
+      const q = query(musterilerRef);
+      unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+        allCustomers = snapshot.docs.map(d => {
+          const data = d.data();
+          const legacyProduct = data.tupCinsi
+            ? `${data.tupCinsi}${data.tupAdedi ? ` (${data.tupAdedi} adet)` : ""}`
+            : "";
+          return {
+            id: d.id,
+            adSoyad: data.adSoyad || "",
+            urunler: data.urunler || legacyProduct || "",
+            adres: data.adres || "",
+            borc: Number(data.borc || 0),
+            not: data.not || "",
+            createdAt: data.createdAt?.seconds || 0
+          };
+        });
+        updateStats();
+        renderList();
+      });
+    }
+
+    function updateStats() {
+      const total = allCustomers.length;
+      const debtors = allCustomers.filter(c => c.borc > 0);
+      const totalDebt = debtors.reduce((sum, c) => sum + c.borc, 0);
+
+      document.getElementById("statTotalCustomers").textContent = total;
+      document.getElementById("statDebtorCount").textContent = debtors.length;
+      document.getElementById("statTotalDebt").textContent = `${totalDebt.toLocaleString("tr-TR")} ₺`;
+    }
+
+    function normalizeTr(str) {
+      return String(str || "")
+        .toLocaleLowerCase("tr-TR")
+        .replace(/ı/g, "i")
+        .replace(/ğ/g, "g")
+        .replace(/ü/g, "u")
+        .replace(/ş/g, "s")
+        .replace(/ö/g, "o")
+        .replace(/ç/g, "c");
+    }
+
+    function highlightText(text, rawQuery) {
+      const safe = escapeHtml(text);
+      if (!rawQuery) return safe;
+      const escapedQ = rawQuery.replace(/[.*+?^${}()|[\]\]/g, "\$&");
+      const regex = new RegExp(`(${escapedQ})`, "gi");
+      return safe.replace(regex, "<mark>$1</mark>");
+    }
+
+    document.querySelectorAll(".filter-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        document.querySelectorAll(".filter-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentFilter = pill.dataset.filter;
+        renderList();
+      });
+    });
+
+    document.getElementById("searchInput").addEventListener("input", renderList);
+    document.getElementById("sortSelect").addEventListener("change", renderList);
+
+    async function updateDebtDirect(c, newDebtValue) {
+      if (newDebtValue === null) return;
+      const parsed = Number(String(newDebtValue).replace(",", ".").trim());
+      if (Number.isNaN(parsed) || parsed < 0) {
+        alert("Geçerli bir tutar girin (0 veya daha büyük).");
+        return;
+      }
+      await updateDoc(doc(db, "musteriler", c.id), { borc: parsed });
+    }
+
+    function renderList() {
+      const rawQuery = document.getElementById("searchInput").value.trim();
+      const tokens = normalizeTr(rawQuery).split(/\s+/).filter(Boolean);
+      const sortMode = document.getElementById("sortSelect").value;
+
+      let filtered = allCustomers.filter(c => {
+        if (currentFilter === "debt" && c.borc <= 0) return false;
+        if (currentFilter === "clear" && c.borc > 0) return false;
+
+        if (tokens.length === 0) return true;
+        const haystack = normalizeTr(`${c.adSoyad} ${c.urunler} ${c.adres} ${c.not}`);
+        return tokens.every(tok => haystack.includes(tok));
+      });
+
+      filtered.sort((a, b) => {
+        if (sortMode === "name_asc") return a.adSoyad.localeCompare(b.adSoyad, "tr");
+        if (sortMode === "debt_desc") return b.borc - a.borc;
+        if (sortMode === "debt_asc") return a.borc - b.borc;
+        if (sortMode === "newest") return b.createdAt - a.createdAt;
+        return 0;
+      });
+
+      document.getElementById("filteredCount").textContent = filtered.length;
+      const listEl = document.getElementById("customerList");
+      listEl.innerHTML = "";
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<p style="color: var(--text-muted); font-size: 14px; grid-column: 1/-1; text-align: center; padding: 24px 0;">Aramanıza uygun müşteri kaydı bulunamadı.</p>`;
+        return;
+      }
+
+      filtered.forEach(c => {
+        const hasDebt = c.borc > 0;
+        const card = document.createElement("div");
+        card.className = `c-card ${hasDebt ? "has-debt" : ""}`;
+        card.innerHTML = `
+          <div>
+            <div class="c-top">
+              <h3 class="c-name">${highlightText(c.adSoyad, rawQuery)}</h3>
+              <span class="debt-pill ${hasDebt ? "unpaid" : "paid"}">
+                ${hasDebt ? `Borç: ${c.borc.toLocaleString("tr-TR")} ₺` : "Borcu Yok"}
+              </span>
+            </div>
+
+            <div class="c-meta" style="margin-top: 12px;">
+              <div class="c-products">
+                🛒 <strong>Aldığı Ürünler:</strong> ${c.urunler ? highlightText(c.urunler, rawQuery) : "<span style='opacity:0.6'>Belirtilmemiş</span>"}
+              </div>
+              <div class="c-row">
+                <span class="c-row-icon">📍</span>
+                <span>${c.adres ? highlightText(c.adres, rawQuery) : "<span style='color:var(--text-dim)'>Adres girilmemiş</span>"}</span>
+              </div>
+              ${c.not ? `
+                <div class="c-note">
+                  📝 <strong>Not:</strong> ${highlightText(c.not, rawQuery)}
+                </div>
+              ` : ""}
+            </div>
+          </div>
+
+          <div class="c-actions">
+            <button type="button" class="btn-warning btn-sm edit-debt-btn">₺ Borç Değiştir</button>
+            ${hasDebt ? `<button type="button" class="btn-success btn-sm clear-debt-btn">✓ Borcu Sıfırla</button>` : ""}
+            <button type="button" class="btn-secondary btn-sm edit-btn">✎ Düzenle</button>
+            <button type="button" class="btn-danger btn-sm del-btn">🗑 Sil</button>
+          </div>
+        `;
+
+        card.querySelector(".edit-debt-btn").addEventListener("click", async () => {
+          const val = prompt(`"${c.adSoyad}" için yeni borç tutarını (TL) girin:
+(Mevcut borç: ${c.borc} TL)`, String(c.borc));
+          await updateDebtDirect(c, val);
+        });
+
+        if (hasDebt) {
+          card.querySelector(".clear-debt-btn").addEventListener("click", async () => {
+            if (confirm(`"${c.adSoyad}" müşterisinin ${c.borc.toLocaleString("tr-TR")} ₺ borcu sıfırlansın mı?`)) {
+              await updateDoc(doc(db, "musteriler", c.id), { borc: 0 });
+            }
+          });
+        }
+
+        card.querySelector(".edit-btn").addEventListener("click", () => startEdit(c));
+        card.querySelector(".del-btn").addEventListener("click", () => deleteCustomer(c));
+        listEl.appendChild(card);
+      });
+    }
+
+    document.getElementById("customerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const editId = document.getElementById("editId").value;
+      const payload = {
+        adSoyad: document.getElementById("adSoyad").value.trim(),
+        urunler: document.getElementById("urunler").value.trim(),
+        adres: document.getElementById("adres").value.trim(),
+        borc: Number(document.getElementById("borc").value || 0),
+        not: document.getElementById("not").value.trim()
+      };
+
+      if (editId) {
+        await updateDoc(doc(db, "musteriler", editId), payload);
+      } else {
+        payload.createdAt = serverTimestamp();
+        await addDoc(musterilerRef, payload);
+      }
+      resetForm();
+      formCard.classList.add("hidden");
+    });
+
+    function startEdit(c) {
+      document.getElementById("editId").value = c.id;
+      document.getElementById("adSoyad").value = c.adSoyad;
+      document.getElementById("urunler").value = c.urunler;
+      document.getElementById("adres").value = c.adres;
+      document.getElementById("borc").value = c.borc;
+      document.getElementById("not").value = c.not;
+
+      document.getElementById("formTitle").textContent = "✏️ Müşteri Bilgilerini Düzenle";
+      document.getElementById("saveBtn").textContent = "Değişiklikleri Kaydet";
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+      formCard.classList.remove("hidden");
+      formCard.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function resetForm() {
+      document.getElementById("customerForm").reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("borc").value = "0";
+      document.getElementById("formTitle").textContent = "✨ Yeni Müşteri Kaydı";
+      document.getElementById("saveBtn").textContent = "Müşteriyi Kaydet";
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+    }
+
+    document.getElementById("cancelEditBtn").addEventListener("click", () => {
+      resetForm();
+      formCard.classList.add("hidden");
+    });
+
+    async function deleteCustomer(c) {
+      if (confirm(`"${c.adSoyad}" kaydını kalıcı olarak silmek istediğinize emin misiniz?`)) {
+        await deleteDoc(doc(db, "musteriler", c.id));
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+  </script>
+</body>
+</html>
