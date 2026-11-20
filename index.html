@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tüpçü Müşteri Defteri</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #181b22;
+      --border: #2a2f3a;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { margin: 0; background: var(--bg); color: var(--text); padding: 16px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    h1, h2 { margin-top: 0; }
+    input, select, textarea, button {
+      width: 100%; padding: 11px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: #12151b; color: var(--text); font-size: 15px; margin-bottom: 10px;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    button { background: var(--accent); border: none; font-weight: 600; cursor: pointer; transition: 0.15s; }
+    button:hover { background: var(--accent-hover); }
+    button.secondary { background: #262b36; }
+    button.secondary:hover { background: #323846; }
+    button.danger { background: var(--danger); }
+    button.success { background: var(--success); }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .row-actions button { width: auto; padding: 7px 12px; font-size: 13px; margin: 0; }
+    .customer-item {
+      border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px;
+      background: #14171e; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+    }
+    .customer-info p { margin: 4px 0; color: var(--muted); font-size: 14px; }
+    .customer-info strong { color: var(--text); font-size: 16px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 12px; background: #232936; color: #cbd5e1; margin-right: 6px; }
+    .badge.debt { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .topbar button { width: auto; margin: 0; }
+    .hidden { display: none !important; }
+    .status { font-size: 13px; color: #fbbf24; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- GİRİŞ EKRANI -->
+    <div id="loginView" class="card" style="max-width: 420px; margin: 60px auto;">
+      <h2>Tüpçü Müşteri Defteri</h2>
+      <p style="color: var(--muted); font-size: 14px;">Devam etmek için yetkili hesabınızla giriş yapın.</p>
+      <form id="loginForm">
+        <input type="email" id="loginEmail" placeholder="E-posta adresi" required />
+        <input type="password" id="loginPassword" placeholder="Şifre" required />
+        <button type="submit">Giriş Yap</button>
+      </form>
+      <div id="loginError" class="status"></div>
+    </div>
+
+    <!-- ANA UYGULAMA -->
+    <div id="appView" class="hidden">
+      <div class="topbar">
+        <h2 style="margin:0;">Müşteri Takip Defteri</h2>
+        <button id="logoutBtn" class="secondary">Çıkış Yap</button>
+      </div>
+
+      <!-- ARAMA -->
+      <div class="card">
+        <input type="text" id="searchInput" placeholder="İsim, telefon veya adres ile müşteri ara..." style="margin-bottom: 0;" />
+      </div>
+
+      <!-- YENİ MÜŞTERİ / DÜZENLEME FORMU -->
+      <div class="card">
+        <h3 id="formTitle" style="margin-top:0;">Yeni Müşteri Ekle</h3>
+        <form id="customerForm">
+          <input type="hidden" id="editId" />
+          <div class="grid">
+            <input type="text" id="adSoyad" placeholder="Ad Soyad *" required />
+            <input type="tel" id="telefon" placeholder="Telefon (05xx...)" />
+            <input type="text" id="tupCinsi" placeholder="Tüp Cinsi (12kg Ev, Küçük, Ticari...)" />
+            <input type="number" id="tupAdedi" placeholder="Elindeki Tüp Adedi" min="0" value="1" />
+            <input type="number" id="borc" placeholder="Borç (TL)" min="0" step="0.01" value="0" />
+          </div>
+          <input type="text" id="adres" placeholder="Açık Adres" />
+          <textarea id="not" rows="2" placeholder="Not (Zil bilgisi, kat, özel not...)"></textarea>
+          <div class="row-actions">
+            <button type="submit" id="saveBtn">Müşteriyi Kaydet</button>
+            <button type="button" id="cancelEditBtn" class="secondary hidden">İptal</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- MÜŞTERİ LİSTESİ -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0;">Müşteriler (<span id="countSpan">0</span>)</h3>
+        </div>
+        <div id="customerList"></div>
+      </div>
+
+      <!-- EXCEL YÜKLEME VE YEDEKLEME -->
+      <div class="card">
+        <h3 style="margin-top:0;">Excel Aktarımı & Yedekleme</h3>
+        <div class="row-actions">
+          <label style="background:#262b36; padding:9px 14px; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600;">
+            Excel'den Yükle (.xlsx)
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden" />
+          </label>
+          <button type="button" id="exportBtn" class="success">Yedek İndir (.xlsx)</button>
+        </div>
+        <div id="importStatus" class="status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // =========================================================================
+    // FIREBASE AYARLARI: Project Settings -> Your apps (</>) bölümünden aldığın
+    // bilgileri aşağıdaki "BURAYA" yazan yerlere yapıştır.
+    // =========================================================================
+    const firebaseConfig = {
+      apiKey: "BURAYA",
+      authDomain: "BURAYA",
+      projectId: "BURAYA",
+      storageBucket: "BURAYA",
+      messagingSenderId: "BURAYA",
+      appId: "BURAYA"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const musterilerRef = collection(db, "musteriler");
+
+    let allCustomers = [];
+    let unsubscribeSnapshot = null;
+
+    const loginView = document.getElementById("loginView");
+    const appView = document.getElementById("appView");
+    const loginError = document.getElementById("loginError");
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loginView.classList.add("hidden");
+        appView.classList.remove("hidden");
+        startListening();
+      } else {
+        appView.classList.add("hidden");
+        loginView.classList.remove("hidden");
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+      }
+    });
+
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      loginError.textContent = "Giriş yapılıyor...";
+      try {
+        await signInWithEmailAndPassword(
+          auth,
+          document.getElementById("loginEmail").value.trim(),
+          document.getElementById("loginPassword").value
+        );
+        loginError.textContent = "";
+      } catch (err) {
+        loginError.textContent = "Giriş başarısız: E-posta, şifre veya Firebase ayarlarını kontrol edin.";
+      }
+    });
+
+    document.getElementById("logoutBtn").addEventListener("click", () => signOut(auth));
+
+    function startListening() {
+      const q = query(musterilerRef, orderBy("adSoyad"));
+      unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+        allCustomers = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderList();
+      });
+    }
+
+    function renderList() {
+      const term = document.getElementById("searchInput").value.toLowerCase().trim();
+      const filtered = allCustomers.filter(c =>
+        (c.adSoyad || "").toLowerCase().includes(term) ||
+        (c.telefon || "").toLowerCase().includes(term) ||
+        (c.adres || "").toLowerCase().includes(term)
+      );
+
+      document.getElementById("countSpan").textContent = filtered.length;
+      const listEl = document.getElementById("customerList");
+      listEl.innerHTML = "";
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `<p style="color:var(--muted); font-size:14px;">Kayıt bulunamadı.</p>`;
+        return;
+      }
+
+      filtered.forEach(c => {
+        const div = document.createElement("div");
+        div.className = "customer-item";
+        div.innerHTML = `
+          <div class="customer-info">
+            <strong>${escapeHtml(c.adSoyad || "")}</strong>
+            <p>Tel: ${escapeHtml(c.telefon || "-")} | Adres: ${escapeHtml(c.adres || "-")}</p>
+            <div style="margin-top:6px;">
+              <span class="badge">Tüp: ${escapeHtml(c.tupCinsi || "-")} (${c.tupAdedi ?? 0} adet)</span>
+              <span class="badge ${Number(c.borc) > 0 ? 'debt' : ''}">Borç: ${Number(c.borc || 0).toLocaleString('tr-TR')} TL</span>
+            </div>
+            ${c.not ? `<p style="margin-top:6px; font-style:italic;">Not: ${escapeHtml(c.not)}</p>` : ""}
+          </div>
+          <div class="row-actions">
+            <button type="button" class="secondary edit-btn">Düzenle</button>
+            <button type="button" class="danger del-btn">Sil</button>
+          </div>
+        `;
+        div.querySelector(".edit-btn").addEventListener("click", () => startEdit(c));
+        div.querySelector(".del-btn").addEventListener("click", () => deleteCustomer(c));
+        listEl.appendChild(div);
+      });
+    }
+
+    document.getElementById("searchInput").addEventListener("input", renderList);
+
+    document.getElementById("customerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const editId = document.getElementById("editId").value;
+      const data = {
+        adSoyad: document.getElementById("adSoyad").value.trim(),
+        telefon: document.getElementById("telefon").value.trim(),
+        adres: document.getElementById("adres").value.trim(),
+        tupCinsi: document.getElementById("tupCinsi").value.trim(),
+        tupAdedi: Number(document.getElementById("tupAdedi").value || 0),
+        borc: Number(document.getElementById("borc").value || 0),
+        not: document.getElementById("not").value.trim()
+      };
+
+      if (editId) {
+        await updateDoc(doc(db, "musteriler", editId), data);
+        resetForm();
+      } else {
+        await addDoc(musterilerRef, data);
+        resetForm();
+      }
+    });
+
+    function startEdit(c) {
+      document.getElementById("editId").value = c.id;
+      document.getElementById("adSoyad").value = c.adSoyad || "";
+      document.getElementById("telefon").value = c.telefon || "";
+      document.getElementById("adres").value = c.adres || "";
+      document.getElementById("tupCinsi").value = c.tupCinsi || "";
+      document.getElementById("tupAdedi").value = c.tupAdedi ?? 0;
+      document.getElementById("borc").value = c.borc ?? 0;
+      document.getElementById("not").value = c.not || "";
+      document.getElementById("formTitle").textContent = "Müşteriyi Düzenle";
+      document.getElementById("saveBtn").textContent = "Değişiklikleri Kaydet";
+      document.getElementById("cancelEditBtn").classList.remove("hidden");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetForm() {
+      document.getElementById("customerForm").reset();
+      document.getElementById("editId").value = "";
+      document.getElementById("tupAdedi").value = "1";
+      document.getElementById("borc").value = "0";
+      document.getElementById("formTitle").textContent = "Yeni Müşteri Ekle";
+      document.getElementById("saveBtn").textContent = "Müşteriyi Kaydet";
+      document.getElementById("cancelEditBtn").classList.add("hidden");
+    }
+
+    document.getElementById("cancelEditBtn").addEventListener("click", resetForm);
+
+    async function deleteCustomer(c) {
+      if (confirm(`"${c.adSoyad}" kaydını silmek istediğinize emin misiniz?`)) {
+        await deleteDoc(doc(db, "musteriler", c.id));
+      }
+    }
+
+    // EXCEL YÜKLEME (2. satırdaki ÖRNEK satırını otomatik atlar)
+    document.getElementById("excelFileInput").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const statusEl = document.getElementById("importStatus");
+      statusEl.textContent = "Excel okunuyor...";
+
+      const buffer = await file.arrayBuffer();
+      const wb = XLSX.read(buffer, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      let added = 0;
+      for (let i = 1; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || !r[0]) continue;
+        const adSoyad = String(r[0]).trim();
+        if (i === 1 && adSoyad.toUpperCase().includes("ÖRNEK")) continue;
+
+        await addDoc(musterilerRef, {
+          adSoyad,
+          telefon: r[1] ? String(r[1]).trim() : "",
+          adres: r[2] ? String(r[2]).trim() : "",
+          tupCinsi: r[3] ? String(r[3]).trim() : "",
+          tupAdedi: Number(r[4] || 0),
+          borc: Number(r[5] || 0),
+          not: r[6] ? String(r[6]).trim() : ""
+        });
+        added++;
+      }
+      statusEl.textContent = `${added} müşteri başarıyla yüklendi.`;
+      e.target.value = "";
+    });
+
+    // YEDEK İNDİRME
+    document.getElementById("exportBtn").addEventListener("click", () => {
+      const rows = [
+        ["Ad Soyad", "Telefon", "Adres", "Tüp Cinsi", "Elindeki Tüp Adedi", "Borç (TL)", "Not"],
+        ...allCustomers.map(c => [
+          c.adSoyad || "",
+          c.telefon || "",
+          c.adres || "",
+          c.tupCinsi || "",
+          c.tupAdedi ?? 0,
+          c.borc ?? 0,
+          c.not || ""
+        ])
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Musteriler");
+      XLSX.writeFile(wb, `tupcu-yedek-${new Date().toISOString().slice(0,10)}.xlsx`);
+    });
+
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, m => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m]));
+    }
+  </script>
+</body>
+</html>
